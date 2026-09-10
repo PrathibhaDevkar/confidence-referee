@@ -9,8 +9,11 @@ Generalized out of [confidence-aware-meeting-intelligence](https://github.com/Pr
 where this pattern was first built and validated: filtering to the
 top-confidence tier nearly doubled action-item extraction precision (58%
 vs. a 35% no-filtering baseline) on genuinely held-out data. That project
-remains the one validated integration; this package is the domain-agnostic
-core extracted out of it.
+is now a real integration (see `confidence/referee_adapter.py` there), not
+just the source this package was extracted from. A second, independent
+domain - RAG-answer hallucination detection - validates that the
+abstraction actually generalizes rather than just being designed to look
+like it does (see "Validated against a second domain" below).
 
 ## The idea
 
@@ -72,17 +75,40 @@ as-is by any domain. What you supply per domain:
   be independently re-derived, not just trusted from the model.
 - Your own labeled dataset, to train a `Calibrator` for your domain.
 
-See `examples/meetings/adapter.py` for the sketch of how
-confidence-aware-meeting-intelligence's `Transcript` and owner-attribution
-logic plug in - not yet wired into a live integration (that's the next
-phase of generalizing this out), but the shape is deliberately visible now.
+`examples/meetings/adapter.py` is the original sketch of how this would
+work, written before the real integration existed - kept for reference,
+but superseded by the actual `confidence/referee_adapter.py` in the
+meeting-intelligence repo, which is what that project really runs on now.
+
+## Validated against a second domain
+
+`examples/rag_grounding/` is a deliberately lightweight proof-of-concept
+against RAG-answer hallucination detection - a domain with no owner-like
+category (no `DomainValidator`), no second extraction arm to compare
+against (no `AgreementSignal`), and no self-reported model confidence (no
+`SelfReportSignal`). It uses `GroundingSignal` alone, completely unmodified,
+against a 300-example sample of [HaluEval](https://github.com/RUCAIBox/HaluEval)'s
+QA data: for each question, scoring the real answer (should be grounded in
+the source knowledge snippet) against the hallucinated answer (should not
+be).
+
+Result: `GroundingSignal`'s raw score alone separates the two with 0.97
+AUC (mean grounding_score 0.978 for real answers vs. 0.600 for
+hallucinated ones), and a `Calibrator` trained on that single feature
+reaches 94% held-out accuracy. No changes were needed to `GroundingSignal`,
+`Claim`, `ConfidenceReferee`, or `Calibrator` to get this - only a new
+`SourceDocument` adapter (`KnowledgeSource`, ~10 lines) and a data-loading
+script. This is the actual evidence that the interfaces generalize, not
+just a design intention: `python3 examples/rag_grounding/run_poc.py`.
 
 ## Status
 
-Extracted from one validated domain (meeting action-item extraction).
-No second domain has been built against this package yet - the API here is
-kept intentionally small rather than over-abstracted for domains that don't
-exist yet.
+Validated against two domains: meeting action-item extraction (the
+original, full production integration) and RAG-answer hallucination
+detection (a lightweight proof-of-concept, not a full second project). The
+API is still kept intentionally small - two domains is enough to trust the
+seams (SourceDocument, optional DomainValidator, named feature dicts), not
+a reason to start speculatively building for a third.
 
 ## Install (editable, for development)
 
