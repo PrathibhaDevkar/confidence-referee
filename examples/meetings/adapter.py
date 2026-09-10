@@ -1,7 +1,9 @@
 """Sketch of how confidence-aware-meeting-intelligence would plug into
-confidence_referee, once Phase 2 actually wires the two repos together.
-Not imported by anything yet - this exists so the shape of the integration
-is visible and reviewable now, during Phase 1, rather than discovered later.
+confidence_referee, written during Phase 1, before the real integration
+existed. SUPERSEDED: the actual integration now lives in that project's
+own confidence/referee_adapter.py (Phase 2, already wired up and verified
+end to end) - this file is kept only as the original design sketch, not as
+documentation of current behavior.
 
 Two adapters are needed on the meetings side:
 
